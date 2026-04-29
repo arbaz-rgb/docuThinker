@@ -1,6 +1,6 @@
-# SmartDoc AI
+# DocuThinker
 
-SmartDoc AI is a full-stack document intelligence app for uploading PDFs, extracting text, generating AI study outputs, chatting with documents, and exporting summaries. The current codebase is organized as a React/Vite frontend and an Express/MongoDB backend.
+DocuThinker is a full-stack document intelligence app for uploading PDFs, extracting text, generating AI study outputs, chatting with documents, and exporting summaries. The current codebase is organized as a React/Vite frontend and an Express/MongoDB backend.
 
 ## Features
 
@@ -17,7 +17,7 @@ SmartDoc AI is a full-stack document intelligence app for uploading PDFs, extrac
 ## Architecture
 
 ```text
-SmartDoc AI
+DocuThinker
 |-- frontend/                 React 19 + Vite app
 |   |-- src/pages             Dashboard, upload, details, Ask PDF, study modes, auth
 |   |-- src/components        Layout and shared UI components
