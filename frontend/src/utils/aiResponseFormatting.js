@@ -1,3 +1,5 @@
+const ARROW = "\u2192";
+
 const SECTION_ALIASES = new Map(
   [
     ["overview", "Overview"],
@@ -38,11 +40,14 @@ const cleanLine = (value) =>
     .replace(/[ \t]+/g, " ")
     .trim();
 
+const stripArrowPrefix = (value) => value.replace(/^(\u2192|â†’)\s*/, "");
+
 const getHeading = (line) => {
-  const normalized = cleanLine(line)
-    .replace(/^[-\u2022]\s*/, "")
-    .replace(/^\d+[.)]\s*/, "")
-    .replace(/^→\s*/, "")
+  const normalized = stripArrowPrefix(
+    cleanLine(line)
+      .replace(/^[-\u2022]\s*/, "")
+      .replace(/^\d+[.)]\s*/, "")
+  )
     .replace(/:$/, "")
     .toLowerCase();
 
@@ -89,7 +94,7 @@ export const formatAiResponseText = (text, fallbackHeading = "Overview") => {
       if (output.length && output[output.length - 1] !== "") {
         output.push("");
       }
-      output.push(`→ ${heading}${line.endsWith(":") ? ":" : ""}`);
+      output.push(`${ARROW} ${heading}${line.endsWith(":") ? ":" : ""}`);
       continue;
     }
 
@@ -101,7 +106,7 @@ export const formatAiResponseText = (text, fallbackHeading = "Overview") => {
       if (output.length && output[output.length - 1] !== "") {
         output.push("");
       }
-      output.push(`→ ${labelHeading}${labelMatch[2] ? ":" : ""}`);
+      output.push(`${ARROW} ${labelHeading}${labelMatch[2] ? ":" : ""}`);
 
       if (labelMatch[2]) {
         output.push(cleanLine(labelMatch[2]));
@@ -113,7 +118,7 @@ export const formatAiResponseText = (text, fallbackHeading = "Overview") => {
   }
 
   const formatted = output.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-  return hasHeading ? formatted : [`→ ${fallbackHeading}`, "", formatted].join("\n").trim();
+  return hasHeading ? formatted : [`${ARROW} ${fallbackHeading}`, "", formatted].join("\n").trim();
 };
 
 export const parseAiResponse = (text, fallbackHeading = "Overview") => {
@@ -128,9 +133,9 @@ export const parseAiResponse = (text, fallbackHeading = "Overview") => {
       continue;
     }
 
-    if (trimmedLine.startsWith("→ ")) {
+    if (/^(\u2192|â†’)\s+/.test(trimmedLine)) {
       currentSection = {
-        heading: trimmedLine.replace(/^→\s*/, "").replace(/:$/, ""),
+        heading: trimmedLine.replace(/^(\u2192|â†’)\s*/, "").replace(/:$/, ""),
         lines: [],
       };
       sections.push(currentSection);

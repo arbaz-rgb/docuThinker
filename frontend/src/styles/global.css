@@ -1192,6 +1192,20 @@ a {
   font-size: 15px;
 }
 
+.exam-output {
+  margin: 0;
+  padding: 20px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--bg);
+  white-space: pre-wrap;
+  line-height: 1.75;
+  font-family: inherit;
+  font-size: 15px;
+}
+
 .ai-response {
   display: grid;
   gap: 18px;

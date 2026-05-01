@@ -1,3 +1,5 @@
+const ARROW = "\u2192";
+
 const SECTION_ALIASES = new Map(
   [
     ["overview", "Overview"],
@@ -44,6 +46,8 @@ const SECTION_ORDER = [
   "Conclusion",
 ];
 
+const EXAM_SECTION_ORDER = ["MCQs", "Short Questions", "Long Questions"];
+
 const normalizeRepeatedWords = (text) =>
   text.replace(/\b([A-Za-z][A-Za-z0-9+#.-]*)\b(?:\s+\1\b)+/gi, "$1");
 
@@ -70,11 +74,14 @@ const stripMarkdownDecoration = (text) =>
     .replace(/`([^`]+)`/g, "$1")
     .replace(/[*#]/g, "");
 
+const stripArrowPrefix = (value) => value.replace(/^(\u2192|â†’)\s*/, "");
+
 const getHeadingName = (value) => {
-  const normalized = normalizeSpaces(value)
-    .replace(/^[-\u2022]\s*/, "")
-    .replace(/^\d+[.)]\s*/, "")
-    .replace(/^→\s*/, "")
+  const normalized = stripArrowPrefix(
+    normalizeSpaces(value)
+      .replace(/^[-\u2022]\s*/, "")
+      .replace(/^\d+[.)]\s*/, "")
+  )
     .replace(/:$/, "")
     .toLowerCase();
 
@@ -107,9 +114,8 @@ const dedupeLines = (lines) => {
       continue;
     }
 
-    const key = line
+    const key = stripArrowPrefix(line)
       .toLowerCase()
-      .replace(/^→\s*/, "")
       .replace(/^[-\u2022]\s*/, "")
       .replace(/^\d+[.)]\s*/, "")
       .replace(/[^a-z0-9]+/g, " ")
@@ -127,7 +133,7 @@ const dedupeLines = (lines) => {
 };
 
 const pushSectionHeading = (output, heading, useColon = false) => {
-  const line = `→ ${heading}${useColon ? ":" : ""}`;
+  const line = `${ARROW} ${heading}${useColon ? ":" : ""}`;
 
   if (output.length && output[output.length - 1] !== "") {
     output.push("");
@@ -185,7 +191,185 @@ const normalizeAiResponseText = (text, options = {}) => {
     return cleanOutput;
   }
 
-  return [`→ ${options.fallbackHeading}`, "", cleanOutput].join("\n").trim();
+  return [`${ARROW} ${options.fallbackHeading}`, "", cleanOutput].join("\n").trim();
+};
+
+const cleanExamQuestionText = (value) =>
+  normalizeSpaces(value)
+    .replace(/^Question\s*\d+\s*[:.)-]\s*/i, "")
+    .replace(/^Q\s*\d+\s*[:.)-]\s*/i, "")
+    .replace(/^\d+\s*[:.)-]\s*/, "")
+    .replace(/\?+$/, "?")
+    .trim();
+
+const isAnswerLine = (line) =>
+  /^(answer|correct answer|correct option|solution|explanation)\s*[:.)-]/i.test(line);
+
+const getOptionText = (line) => {
+  const optionMatch = line.match(/^[\s(]*([A-Da-d])[\s).:-]+(.+)$/);
+
+  if (optionMatch) {
+    return normalizeSpaces(optionMatch[2]);
+  }
+
+  const numberedOptionMatch = line.match(/^[1-4][.)]\s+(.+)$/);
+  return numberedOptionMatch ? normalizeSpaces(numberedOptionMatch[1]) : null;
+};
+
+const getQuestionText = (line) => {
+  const questionMatch = line.match(/^(?:Question\s*)?Q?\s*\d+\s*[:.)-]\s+(.+)$/i);
+  return questionMatch ? cleanExamQuestionText(questionMatch[1]) : null;
+};
+
+const parseExamSections = (text, fallbackHeading = "MCQs") => {
+  const sections = new Map();
+  let currentHeading = null;
+
+  const ensureSection = (heading) => {
+    if (!sections.has(heading)) {
+      sections.set(heading, []);
+    }
+
+    currentHeading = heading;
+  };
+
+  const expandedLines = stripMarkdownDecoration(text)
+    .split("\n")
+    .flatMap((line) => line.replace(/(?=\s+[A-Da-d][).]\s+)/g, "\n").split("\n"));
+
+  for (const rawLine of expandedLines) {
+    const line = normalizeSpaces(rawLine);
+
+    if (!line) {
+      continue;
+    }
+
+    const heading = getHeadingName(line);
+
+    if (heading) {
+      ensureSection(heading);
+      continue;
+    }
+
+    if (!currentHeading) {
+      ensureSection(fallbackHeading);
+    }
+
+    sections.get(currentHeading).push(line);
+  }
+
+  return sections;
+};
+
+const formatQuestionLines = (lines) => {
+  const questions = [];
+
+  for (const line of lines) {
+    if (isAnswerLine(line)) {
+      continue;
+    }
+
+    const questionText = getQuestionText(line);
+
+    if (questionText) {
+      questions.push(questionText);
+      continue;
+    }
+
+    if (line && !getHeadingName(line)) {
+      questions.push(cleanExamQuestionText(line));
+    }
+  }
+
+  return questions
+    .filter(Boolean)
+    .map((question, index) => `Q${index + 1}. ${question}`);
+};
+
+const formatMcqLines = (lines) => {
+  const mcqs = [];
+  let current = null;
+
+  const pushCurrent = () => {
+    if (!current || !current.question) {
+      return;
+    }
+
+    mcqs.push({
+      question: cleanExamQuestionText(current.question),
+      options: current.options.map(normalizeSpaces).filter(Boolean).slice(0, 4),
+    });
+  };
+
+  for (const line of lines) {
+    if (isAnswerLine(line)) {
+      continue;
+    }
+
+    const optionText = getOptionText(line);
+
+    if (optionText && current) {
+      current.options.push(optionText);
+      continue;
+    }
+
+    const questionText = getQuestionText(line);
+
+    if (questionText) {
+      pushCurrent();
+      current = { question: questionText, options: [] };
+      continue;
+    }
+
+    if (!current) {
+      current = { question: line, options: [] };
+      continue;
+    }
+
+    if (current.options.length) {
+      const lastIndex = current.options.length - 1;
+      current.options[lastIndex] = normalizeSpaces(`${current.options[lastIndex]} ${line}`);
+    } else {
+      current.question = normalizeSpaces(`${current.question} ${line}`);
+    }
+  }
+
+  pushCurrent();
+
+  const validMcqs = mcqs.filter((mcq) => mcq.options.length === 4);
+
+  return validMcqs.flatMap((mcq, index) => {
+    const optionLabels = ["A", "B", "C", "D"];
+    const output = [`Q${index + 1}. ${mcq.question}`];
+
+    mcq.options.forEach((option, optionIndex) => {
+      output.push(`${optionLabels[optionIndex]}) ${option}`);
+    });
+
+    return index < validMcqs.length - 1 ? [...output, ""] : output;
+  });
+};
+
+const formatExamQuestions = (text) => {
+  const sections = parseExamSections(text, "MCQs");
+  const output = [];
+
+  for (const heading of EXAM_SECTION_ORDER) {
+    const lines = sections.get(heading) || [];
+    const formattedLines = heading === "MCQs" ? formatMcqLines(lines) : formatQuestionLines(lines);
+
+    if (!formattedLines.length) {
+      continue;
+    }
+
+    if (output.length) {
+      output.push("");
+    }
+
+    output.push(`${ARROW} ${heading}`, "", ...formattedLines);
+  }
+
+  return output.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 };
 
 const formatAiResponse = (text, options = {}) =>
@@ -201,6 +385,7 @@ const formatStudyNotes = (text) => formatAiResponse(text, { fallbackHeading: "Ov
 module.exports = {
   SECTION_ORDER,
   formatAiResponse,
+  formatExamQuestions,
   formatStudyNotes,
   normalizeRepeatedWords,
   stripMarkdownDecoration,

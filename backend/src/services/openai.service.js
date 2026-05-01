@@ -1,6 +1,7 @@
 const OpenAI = require("openai");
 const {
   formatAiResponse,
+  formatExamQuestions,
   formatStudyNotes,
   normalizeRepeatedWords,
 } = require("../utils/aiResponseFormatting.util");
@@ -23,7 +24,8 @@ const SYSTEM_PROMPTS = {
     "You are DocuThinker, a PDF question-answering assistant. Answer from the document only. If the answer is not present, say that the document does not contain enough information. Return clean plain text study notes. Do not use markdown symbols, markdown bold, or markdown heading syntax.",
   interview:
     "You are DocuThinker, helping a user prepare for an interview based on a document. Return clean plain text study notes. Do not use markdown symbols, markdown bold, or markdown heading syntax.",
-  exam: "You are DocuThinker, helping a student study from a document for an exam. Return clean plain text study notes. Do not use markdown symbols, markdown bold, or markdown heading syntax.",
+  exam:
+    "You are DocuThinker, helping a student study from a document for an exam. Return a clean plain-text exam sheet only. Do not use markdown symbols, markdown bold, or markdown heading syntax.",
 };
 
 const TASK_PROMPTS = {
@@ -80,7 +82,28 @@ const TASK_PROMPTS = {
   interviewQuestions:
     "Generate interview preparation content from this document. Use these section headers where relevant: → Likely Interview Questions, → Ideal Answer Points, → Follow-up Questions, → Revision Notes, → Conclusion. Use numbered lists for questions and hyphen bullets for answer points. Do not use markdown formatting.",
   examQuestions:
-    "Generate exam preparation material from this document. Use these section headers where relevant: → MCQs, → Short Questions, → Long Questions, → Revision Notes, → Conclusion. Use numbered lists for questions and hyphen bullets for supporting points. Do not use markdown formatting.",
+    [
+      "Generate exam preparation material from this document as a strict clean exam sheet.",
+      "Return exactly these section headers in this order:",
+      "\u2192 MCQs",
+      "\u2192 Short Questions",
+      "\u2192 Long Questions",
+      "MCQ rules:",
+      "Every MCQ must start with Q<number>.",
+      "Every MCQ must contain exactly 4 options.",
+      "Options must always be labeled exactly A), B), C), D).",
+      "Only one option should be correct; make the other three options plausible but clearly incorrect.",
+      "Do not include answer keys, explanations, bullets, or raw numbering.",
+      "Short Questions rules:",
+      "Every short question must start with Q<number>.",
+      "Use Q1., Q2., Q3. format only. Do not use 1., 2., 3. numbering.",
+      "Long Questions rules:",
+      "Every long question must start with Q<number>.",
+      "Use Q1., Q2., Q3. format only. Do not use 1., 2., 3. numbering.",
+      "General rules:",
+      "Do not use ##, ###, **, markdown bullets, answer labels, or extra sections.",
+      "Keep clean spacing and plain text formatting.",
+    ].join("\n"),
 };
 
 let openaiClient;
@@ -339,7 +362,7 @@ const generateExamQuestions = (documentText, options = {}) =>
     },
     {
       ...options,
-      formatter: (text) => formatAiResponse(text, { fallbackHeading: "MCQs" }),
+      formatter: formatExamQuestions,
     }
   );
 
