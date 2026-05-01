@@ -1,11 +1,11 @@
 const Document = require("../models/document.model");
 const {
   askPdf,
-  generateExamMode,
-  generateInterviewMode,
+  generateExamQuestions,
+  generateInterviewQuestions,
   generateKeyInsights,
   generateSummary,
-} = require("../services/gemini.service");
+} = require("../services/openai.service");
 
 const getUserDocument = async (documentId, userId) => {
   const document = await Document.findOne({
@@ -47,7 +47,9 @@ const sendAiResponse = (res, { document, feature, result }) => {
 const summarizeDocument = async (req, res, next) => {
   try {
     const document = await getUserDocument(req.params.documentId, req.user._id);
-    const result = await generateSummary(document.extractedText);
+    const result = await generateSummary(document.extractedText, {
+      summaryType: req.body.summaryType,
+    });
 
     sendAiResponse(res, {
       document,
@@ -100,7 +102,7 @@ const askDocumentQuestion = async (req, res, next) => {
 const getInterviewMode = async (req, res, next) => {
   try {
     const document = await getUserDocument(req.params.documentId, req.user._id);
-    const result = await generateInterviewMode(document.extractedText);
+    const result = await generateInterviewQuestions(document.extractedText);
 
     sendAiResponse(res, {
       document,
@@ -115,7 +117,7 @@ const getInterviewMode = async (req, res, next) => {
 const getExamMode = async (req, res, next) => {
   try {
     const document = await getUserDocument(req.params.documentId, req.user._id);
-    const result = await generateExamMode(document.extractedText);
+    const result = await generateExamQuestions(document.extractedText);
 
     sendAiResponse(res, {
       document,

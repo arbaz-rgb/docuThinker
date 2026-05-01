@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import AiResponseRenderer from "../../components/ai/AiResponseRenderer";
 import { askPdfQuestion } from "../../services/ai.service";
 
 const getMessageTime = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -113,7 +114,11 @@ const AskPdfPage = () => {
                   <strong>{message.role === "user" ? "You" : "DocuThinker"}</strong>
                   <span>{message.pending ? "Thinking" : message.time}</span>
                 </div>
-                <p>{message.text}</p>
+                {message.role === "ai" && !message.pending ? (
+                  <AiResponseRenderer text={message.text} compact />
+                ) : (
+                  <p>{message.text}</p>
+                )}
               </div>
             </article>
           ))}

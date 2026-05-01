@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import AiResponseRenderer from "../../components/ai/AiResponseRenderer";
 import { generateInterviewMode } from "../../services/ai.service";
 
 const InterviewModePage = () => {
@@ -64,7 +65,7 @@ const InterviewModePage = () => {
         {isLoading ? (
           <div className="empty-state">Generating interview preparation from the document...</div>
         ) : (
-          <pre className="generated-output">{result}</pre>
+          <AiResponseRenderer text={result} fallbackHeading="Likely Interview Questions" />
         )}
       </section>
     </section>

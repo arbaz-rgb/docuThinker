@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { exportSummary } from "../../services/export.service";
 import { fetchDocumentDetails } from "../../services/document.service";
+import { formatAiResponseText } from "../../utils/aiResponseFormatting";
 
 const formatNumber = (value) => Number(value || 0).toLocaleString();
 
@@ -22,14 +23,21 @@ const buildSummary = (document) => {
   const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((sentence) => sentence.trim()) || [];
   const summary = sentences.filter((sentence) => sentence.length > 30).slice(0, 5).join(" ");
 
-  return [
-    `Title: ${document.title}`,
-    `Classification: ${document.classification || "Unknown"}`,
-    `Pages: ${document.pageCount || 0}`,
-    `Word count: ${document.wordCount || 0}`,
-    "",
-    summary || text.slice(0, 1000) || "No extracted text available.",
-  ].join("\n");
+  return formatAiResponseText(
+    [
+      "→ Overview",
+      `Title: ${document.title}`,
+      `Classification: ${document.classification || "Unknown"}`,
+      `Pages: ${document.pageCount || 0}`,
+      `Word count: ${document.wordCount || 0}`,
+      "",
+      "→ Revision Notes",
+      summary || text.slice(0, 1000) || "No extracted text available.",
+      "",
+      "→ Conclusion",
+      "Use this summary as a quick study reference for the selected document.",
+    ].join("\n")
+  );
 };
 
 const DocumentDetailsPage = () => {

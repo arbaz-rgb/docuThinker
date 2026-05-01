@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { ROUTES } from "../../constants/routes";
-import { fetchDocuments } from "../../services/document.service";
+import { deleteDocument, fetchDocuments } from "../../services/document.service";
 
 const formatDate = (value) => {
   if (!value) {
@@ -22,6 +22,9 @@ const DashboardPage = () => {
   const [pagination, setPagination] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [documentToDelete, setDocumentToDelete] = useState(null);
+  const [deletingDocumentId, setDeletingDocumentId] = useState("");
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -61,6 +64,53 @@ const DashboardPage = () => {
   }, [documents, pagination]);
 
   const firstDocument = documents[0];
+
+  const closeDeleteModal = () => {
+    if (!deletingDocumentId) {
+      setDocumentToDelete(null);
+    }
+  };
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    window.setTimeout(() => {
+      setToast(null);
+    }, 3200);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!documentToDelete) {
+      return;
+    }
+
+    setDeletingDocumentId(documentToDelete._id);
+
+    try {
+      await deleteDocument(documentToDelete._id);
+      setDocuments((currentDocuments) =>
+        currentDocuments.filter((document) => document._id !== documentToDelete._id)
+      );
+      setPagination((currentPagination) =>
+        currentPagination
+          ? {
+              ...currentPagination,
+              total: Math.max((currentPagination.total || 0) - 1, 0),
+            }
+          : currentPagination
+      );
+      setDocumentToDelete(null);
+      showToast("success", "Document deleted successfully.");
+    } catch (requestError) {
+      showToast(
+        "error",
+        requestError.response?.data?.message ||
+          requestError.message ||
+          "Unable to delete this document."
+      );
+    } finally {
+      setDeletingDocumentId("");
+    }
+  };
 
   const quickActions = [
     {
@@ -107,6 +157,7 @@ const DashboardPage = () => {
       </div>
 
       {error ? <div className="status-alert error">{error}</div> : null}
+      {toast ? <div className={`dashboard-toast ${toast.type}`}>{toast.message}</div> : null}
 
       <div className="stats-grid">
         {stats.map((stat) => (
@@ -135,18 +186,30 @@ const DashboardPage = () => {
           ) : documents.length > 0 ? (
             <div className="upload-list">
               {documents.map((document) => (
-                <Link key={document._id} className="upload-row upload-row-link" to={getDocumentPath(document._id)}>
-                  <div className="upload-badge">PDF</div>
-                  <div className="upload-copy">
-                    <strong>{document.title}</strong>
-                    <span>{formatDate(document.createdAt)}</span>
-                  </div>
-                  <div className="upload-tags">
-                    <span className="tag">{document.classification || "Unknown"}</span>
-                    <span className="tag">{document.pageCount || 0} pages</span>
-                  </div>
-                  <div className="upload-status">{document.status}</div>
-                </Link>
+                <article key={document._id} className="upload-row">
+                  <Link className="upload-row-main upload-row-link" to={getDocumentPath(document._id)}>
+                    <div className="upload-badge">PDF</div>
+                    <div className="upload-copy">
+                      <strong>{document.title}</strong>
+                      <span>{formatDate(document.createdAt)}</span>
+                    </div>
+                    <div className="upload-tags">
+                      <span className="tag">{document.classification || "Unknown"}</span>
+                      <span className="tag">{document.pageCount || 0} pages</span>
+                    </div>
+                    <div className="upload-status">{document.status}</div>
+                  </Link>
+                  <button
+                    className="delete-document-button"
+                    type="button"
+                    onClick={() => setDocumentToDelete(document)}
+                    disabled={deletingDocumentId === document._id}
+                    aria-label={`Delete ${document.title}`}
+                    title="Delete document"
+                  >
+                    {deletingDocumentId === document._id ? "Deleting..." : "Delete"}
+                  </button>
+                </article>
               ))}
             </div>
           ) : (
@@ -179,6 +242,42 @@ const DashboardPage = () => {
           </div>
         </aside>
       </div>
+
+      {documentToDelete ? (
+        <div className="modal-backdrop" role="presentation" onMouseDown={closeDeleteModal}>
+          <section
+            className="confirmation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-document-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div>
+              <p className="section-label">Delete document</p>
+              <h3 id="delete-document-title">Are you sure you want to delete this document?</h3>
+              <p className="muted">{documentToDelete.title}</p>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={Boolean(deletingDocumentId)}
+              >
+                Cancel
+              </button>
+              <button
+                className="danger-button"
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={Boolean(deletingDocumentId)}
+              >
+                {deletingDocumentId ? "Deleting..." : "Delete document"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 };

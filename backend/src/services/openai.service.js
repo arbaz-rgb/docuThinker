@@ -1,4 +1,9 @@
 const OpenAI = require("openai");
+const {
+  formatAiResponse,
+  formatStudyNotes,
+  normalizeRepeatedWords,
+} = require("../utils/aiResponseFormatting.util");
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
@@ -9,22 +14,16 @@ const DEFAULT_GENERATION_OPTIONS = {
   max_output_tokens: 1200,
 };
 
-const SUMMARY_SECTION_ORDER = [
-  "Key Concepts",
-  "Important Definitions",
-  "Conclusion",
-];
-
 const SYSTEM_PROMPTS = {
   documentAssistant:
-    "You are DocuThinker, a precise document assistant. Use only the document content provided.",
+    "You are DocuThinker, a precise document assistant. Use only the document content provided. Return clean plain text study notes. Do not use markdown symbols, markdown bold, or markdown heading syntax.",
   insights:
-    "You are DocuThinker, a document analysis assistant. Extract grounded insights only from the provided document.",
+    "You are DocuThinker, a document analysis assistant. Extract grounded insights only from the provided document. Return clean plain text study notes. Do not use markdown symbols, markdown bold, or markdown heading syntax.",
   askPdf:
-    "You are DocuThinker, a PDF question-answering assistant. Answer from the document only. If the answer is not present, say that the document does not contain enough information.",
+    "You are DocuThinker, a PDF question-answering assistant. Answer from the document only. If the answer is not present, say that the document does not contain enough information. Return clean plain text study notes. Do not use markdown symbols, markdown bold, or markdown heading syntax.",
   interview:
-    "You are DocuThinker, helping a user prepare for an interview based on a document.",
-  exam: "You are DocuThinker, helping a student study from a document for an exam.",
+    "You are DocuThinker, helping a user prepare for an interview based on a document. Return clean plain text study notes. Do not use markdown symbols, markdown bold, or markdown heading syntax.",
+  exam: "You are DocuThinker, helping a student study from a document for an exam. Return clean plain text study notes. Do not use markdown symbols, markdown bold, or markdown heading syntax.",
 };
 
 const TASK_PROMPTS = {
@@ -32,44 +31,56 @@ const TASK_PROMPTS = {
     [
       "Rewrite the document as a clean, student-friendly summary.",
       "Return exactly this structure:",
-      "1. A short title on the first line.",
-      "2. One clean overview paragraph.",
-      "3. Key Concepts: 3-5 concise bullet points.",
-      "4. Important Definitions: include only important terms found in the document.",
-      "5. Conclusion: 1-2 sentences.",
+      "→ Overview",
+      "One clean overview paragraph.",
+      "→ Key Concepts",
+      "- 3-5 concise bullet points.",
+      "→ Important Definitions",
+      "- Term: simple definition for important terms found in the document.",
+      "→ Conclusion",
+      "1-2 sentences.",
       "Remove OCR fragments, repeated phrases, slide footer/header text, and raw extraction noise. Use natural language, not copied slide fragments.",
+      "Do not use ##, ###, **, or any markdown formatting.",
     ].join("\n"),
   detailedSummary:
     [
       "Rewrite the document as a clean ChatGPT-style study summary for students.",
       "Return exactly this structure:",
-      "1. A clear title on the first line.",
-      "2. One readable overview paragraph explaining what the document is about.",
-      "3. Key Concepts: 5-8 bullets covering the main ideas without repetition.",
-      "4. Important Definitions: bullets in the format \"- Term: simple definition\" for important terms in the document.",
-      "5. Conclusion: a short final takeaway.",
+      "→ Overview",
+      "One readable overview paragraph explaining what the document is about.",
+      "→ Key Concepts",
+      "- 5-8 bullets covering the main ideas without repetition.",
+      "→ Important Definitions",
+      "- Term: simple definition for important terms in the document.",
+      "→ Conclusion",
+      "A short final takeaway.",
       "Do not paste raw slide/OCR text. Merge broken fragments into complete sentences. Remove duplicate ideas, page numbers, headers, footers, and irrelevant extraction artifacts.",
       "Keep the tone natural, concise, informative, and easy for students to understand.",
+      "Do not use ##, ###, **, or any markdown formatting.",
     ].join("\n"),
   simplifiedSummary:
     [
       "Rewrite the document in simple student-friendly language.",
       "Return exactly this structure:",
-      "1. A simple title on the first line.",
-      "2. One easy overview paragraph.",
-      "3. Key Concepts: 4-6 plain-language bullet points.",
-      "4. Important Definitions: simple term-definition bullets for the most important terms.",
-      "5. Conclusion: 1 short takeaway.",
+      "→ Overview",
+      "One easy overview paragraph.",
+      "→ Key Concepts",
+      "- 4-6 plain-language bullet points.",
+      "→ Important Definitions",
+      "- Simple term-definition bullets for the most important terms.",
+      "→ Conclusion",
+      "1 short takeaway.",
       "Remove repeated OCR fragments and broken slide text. Explain ideas naturally and avoid jargon unless it is defined.",
+      "Do not use ##, ###, **, or any markdown formatting.",
     ].join("\n"),
   keyInsights:
-    "List the key insights from this document. Return practical, high-signal bullet points and avoid repeating generic summary lines.",
+    "List the key insights from this document under → Key Concepts. Return practical, high-signal bullet points and avoid repeating generic summary lines. Do not use markdown formatting.",
   askPdf:
-    "Answer the user's question clearly and cite the relevant document idea in plain language.",
+    "Answer the user's question clearly using → Overview, → Important Definitions when relevant, and → Conclusion. Cite the relevant document idea in plain language. Do not use markdown formatting.",
   interviewQuestions:
-    "Generate interview preparation content from this document. Include likely interview questions, ideal answer points, follow-up questions, and important topics to revise.",
+    "Generate interview preparation content from this document. Use these section headers where relevant: → Likely Interview Questions, → Ideal Answer Points, → Follow-up Questions, → Revision Notes, → Conclusion. Use numbered lists for questions and hyphen bullets for answer points. Do not use markdown formatting.",
   examQuestions:
-    "Generate exam preparation material from this document. Include short-answer questions, long-answer questions, MCQs with answers, and a compact revision checklist.",
+    "Generate exam preparation material from this document. Use these section headers where relevant: → MCQs, → Short Questions, → Long Questions, → Revision Notes, → Conclusion. Use numbered lists for questions and hyphen bullets for supporting points. Do not use markdown formatting.",
 };
 
 let openaiClient;
@@ -101,9 +112,6 @@ const trimDocumentText = (text, maxChars = 45000) => {
     ? `${normalizedText.slice(0, maxChars)}\n\n[Document truncated for analysis]`
     : normalizedText;
 };
-
-const normalizeRepeatedWords = (text) =>
-  text.replace(/\b([A-Za-z][A-Za-z0-9+#.-]*)\b(?:\s+\1\b)+/gi, "$1");
 
 const isExtractionNoise = (line) => {
   const normalized = line.toLowerCase();
@@ -184,187 +192,6 @@ const extractResponseText = (response) => {
     .trim();
 };
 
-const stripMarkdownDecoration = (text) =>
-  text
-    .replace(/\r/g, "\n")
-    .replace(/```[\s\S]*?```/g, (match) =>
-      match.replace(/^```[^\n]*\n?/, "").replace(/\n?```$/, "")
-    )
-    .replace(/^\s*#{1,6}\s*/gm, "")
-    .replace(/^\s*>\s?/gm, "")
-    .replace(/^\s*[-*_]{3,}\s*$/gm, "")
-    .replace(/(\*\*|__)(.*?)\1/g, "$2")
-    .replace(/(\*|_)(.*?)\1/g, "$2")
-    .replace(/~~(.*?)~~/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/[ \t]+/g, " ")
-    .trim();
-
-const normalizeSummaryHeading = (line) => {
-  const cleaned = line
-    .replace(/^\s*(?:[-*]|\d+[.)])\s*/, "")
-    .replace(/:$/, "")
-    .trim();
-  const normalized = cleaned.toLowerCase();
-
-  if (normalized === "overview" || normalized === "summary") {
-    return "Overview";
-  }
-
-  if (normalized === "key concepts" || normalized === "key points") {
-    return "Key Concepts";
-  }
-
-  if (normalized === "important definitions" || normalized === "definitions") {
-    return "Important Definitions";
-  }
-
-  if (normalized === "conclusion" || normalized === "short conclusion") {
-    return "Conclusion";
-  }
-
-  return null;
-};
-
-const normalizeListLine = (line) => {
-  const cleaned = line.trim();
-  const numberedMatch = cleaned.match(/^(\d+)[.)]\s+(.*)$/);
-
-  if (numberedMatch) {
-    return `${numberedMatch[1]}. ${numberedMatch[2].trim()}`;
-  }
-
-  return cleaned.replace(/^\s*(?:[-*\u2022])\s*/, "- ").trim();
-};
-
-const removeLeadingListMarker = (line) =>
-  line.replace(/^\s*(?:[-*\u2022]|\d+[.)])\s*/, "").trim();
-
-const dedupeSummaryLines = (lines) => {
-  const seen = new Set();
-  const output = [];
-
-  for (const line of lines) {
-    const key = line
-      .toLowerCase()
-      .replace(/^\s*(?:[-*\u2022]|\d+[.)])\s*/, "")
-      .replace(/[^a-z0-9]+/g, " ")
-      .trim();
-
-    if (!key || seen.has(key)) {
-      continue;
-    }
-
-    seen.add(key);
-    output.push(line);
-  }
-
-  return output;
-};
-
-const cleanSummaryTitle = (line) =>
-  removeLeadingListMarker(line).replace(/^\s*title\s*:\s*/i, "").trim();
-
-const formatPlainTextSummaryLines = (lines) => {
-  const [firstLine, ...bodyLines] = lines;
-  const output = [cleanSummaryTitle(firstLine), ""];
-
-  for (const line of dedupeSummaryLines(bodyLines)) {
-    output.push(normalizeListLine(line));
-  }
-
-  return output.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-};
-
-const formatSummaryText = (text) => {
-  if (!text || typeof text !== "string") {
-    return "";
-  }
-
-  const rawLines = stripMarkdownDecoration(text)
-    .replace(/\n{3,}/g, "\n\n")
-    .split("\n")
-    .map((line) =>
-      normalizeRepeatedWords(
-        line
-          .replace(/\s+/g, " ")
-          .replace(/\s+([,.;:!?])/g, "$1")
-          .trim()
-      )
-    )
-    .filter(Boolean);
-
-  if (!rawLines.length) {
-    return "";
-  }
-
-  const title = cleanSummaryTitle(rawLines[0]);
-  const sections = {
-    overview: [],
-    "Key Concepts": [],
-    "Important Definitions": [],
-    Conclusion: [],
-  };
-  let currentSection = "overview";
-  let hasStructuredSections = false;
-
-  for (const line of rawLines.slice(1)) {
-    const heading = normalizeSummaryHeading(line);
-
-    if (heading) {
-      hasStructuredSections = true;
-
-      if (heading === "Overview") {
-        currentSection = "overview";
-        continue;
-      }
-
-      currentSection = heading;
-      continue;
-    }
-
-    if (currentSection === "overview") {
-      sections.overview.push(line);
-      continue;
-    }
-
-    const normalizedLine =
-      currentSection === "Conclusion" ? removeLeadingListMarker(line) : normalizeListLine(line);
-    sections[currentSection].push(normalizedLine);
-  }
-
-  if (!hasStructuredSections) {
-    return formatPlainTextSummaryLines(rawLines);
-  }
-
-  const output = [title, ""];
-  const overview = dedupeSummaryLines(sections.overview).join(" ");
-
-  if (overview) {
-    output.push(overview, "");
-  }
-
-  for (const heading of SUMMARY_SECTION_ORDER) {
-    const sectionLines = dedupeSummaryLines(sections[heading]);
-
-    if (!sectionLines.length) {
-      continue;
-    }
-
-    output.push(heading, "");
-
-    if (heading === "Conclusion") {
-      output.push(sectionLines.join(" "));
-    } else {
-      output.push(...sectionLines.map(normalizeListLine));
-    }
-
-    output.push("");
-  }
-
-  return output.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-};
-
 const generateOpenAIResponse = async ({ systemPrompt, task, documentText, question }, options = {}) => {
   const client = getOpenAIClient();
   const model = options.model || OPENAI_MODEL;
@@ -395,7 +222,7 @@ const generateOpenAIResponse = async ({ systemPrompt, task, documentText, questi
     }
 
     return {
-      text: options.formatter ? options.formatter(text) : text,
+      text: options.formatter ? options.formatter(text) : formatAiResponse(text),
       model,
       usageMetadata: response.usage,
     };
@@ -418,7 +245,7 @@ const generateShortSummary = (documentText, options = {}) =>
     },
     {
       ...options,
-      formatter: formatSummaryText,
+      formatter: formatStudyNotes,
     }
   );
 
@@ -431,7 +258,7 @@ const generateDetailedSummary = (documentText, options = {}) =>
     },
     {
       ...options,
-      formatter: formatSummaryText,
+      formatter: formatStudyNotes,
     }
   );
 
@@ -444,7 +271,7 @@ const generateSimplifiedSummary = (documentText, options = {}) =>
     },
     {
       ...options,
-      formatter: formatSummaryText,
+      formatter: formatStudyNotes,
     }
   );
 
@@ -469,7 +296,10 @@ const generateKeyInsights = (documentText, options = {}) =>
       task: TASK_PROMPTS.keyInsights,
       documentText,
     },
-    options
+    {
+      ...options,
+      formatter: (text) => formatAiResponse(text, { fallbackHeading: "Key Concepts" }),
+    }
   );
 
 const askPdf = (documentText, question, options = {}) =>
@@ -480,7 +310,10 @@ const askPdf = (documentText, question, options = {}) =>
       documentText,
       question,
     },
-    options
+    {
+      ...options,
+      formatter: (text) => formatAiResponse(text, { fallbackHeading: "Overview" }),
+    }
   );
 
 const generateInterviewQuestions = (documentText, options = {}) =>
@@ -490,7 +323,11 @@ const generateInterviewQuestions = (documentText, options = {}) =>
       task: TASK_PROMPTS.interviewQuestions,
       documentText,
     },
-    options
+    {
+      ...options,
+      formatter: (text) =>
+        formatAiResponse(text, { fallbackHeading: "Likely Interview Questions" }),
+    }
   );
 
 const generateExamQuestions = (documentText, options = {}) =>
@@ -500,7 +337,10 @@ const generateExamQuestions = (documentText, options = {}) =>
       task: TASK_PROMPTS.examQuestions,
       documentText,
     },
-    options
+    {
+      ...options,
+      formatter: (text) => formatAiResponse(text, { fallbackHeading: "MCQs" }),
+    }
   );
 
 module.exports = {

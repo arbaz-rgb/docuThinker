@@ -1,3 +1,5 @@
+const { formatStudyNotes } = require("../utils/aiResponseFormatting.util");
+
 const sanitizeFilename = (value) =>
   String(value || "document-summary")
     .replace(/[^a-z0-9._-]+/gi, "-")
@@ -46,20 +48,24 @@ const createSummaryText = (document) => {
 
   const keywords = document.keywords?.length ? document.keywords.join(", ") : "Not available";
 
-  return [
-    "DocuThinker Summary Export",
-    "",
-    `Title: ${document.title}`,
-    `Original file: ${document.originalName}`,
-    `Classification: ${document.classification || "Unknown"}`,
-    `Pages: ${document.pageCount || 0}`,
-    `Word count: ${document.wordCount || 0}`,
-    `Readability score: ${formatReadability(document.readabilityScore)}`,
-    `Keywords: ${keywords}`,
-    "",
-    "Summary",
-    buildExtractiveSummary(extractedText),
-  ].join("\n");
+  return formatStudyNotes(
+    [
+      "→ Overview",
+      `Title: ${document.title}`,
+      `Original file: ${document.originalName}`,
+      `Classification: ${document.classification || "Unknown"}`,
+      `Pages: ${document.pageCount || 0}`,
+      `Word count: ${document.wordCount || 0}`,
+      `Readability score: ${formatReadability(document.readabilityScore)}`,
+      `Keywords: ${keywords}`,
+      "",
+      "→ Revision Notes",
+      buildExtractiveSummary(extractedText),
+      "",
+      "→ Conclusion",
+      "Use this export as a quick review copy of the document's main extracted content.",
+    ].join("\n")
+  );
 };
 
 const wrapText = (text, maxLength = 90) => {

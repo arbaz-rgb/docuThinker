@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import AiResponseRenderer from "../../components/ai/AiResponseRenderer";
 import { generateExamMode } from "../../services/ai.service";
 
 const ExamModePage = () => {
@@ -66,7 +67,7 @@ const ExamModePage = () => {
         {isLoading ? (
           <div className="empty-state">Generating exam questions and revision notes from the document...</div>
         ) : (
-          <pre className="generated-output">{result}</pre>
+          <AiResponseRenderer text={result} fallbackHeading="MCQs" />
         )}
       </section>
     </section>

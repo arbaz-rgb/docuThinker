@@ -28,13 +28,13 @@ DocuThinker
     |-- src/controllers       Request handlers
     |-- src/routes            API route modules
     |-- src/models            Mongoose models
-    |-- src/services          Gemini, export, and analysis services
+    |-- src/services          OpenAI, export, and analysis services
     |-- src/middleware        Auth, upload, and error middleware
     |-- src/utils             Token and text extraction utilities
     `-- src/uploads           Uploaded PDF storage
 ```
 
-The frontend talks to the backend through `VITE_API_BASE_URL`, defaulting to `http://localhost:5000/api`. The backend stores users and documents in MongoDB, extracts text from uploaded PDFs, and uses Gemini for AI features when `GEMINI_API_KEY` is configured.
+The frontend talks to the backend through `VITE_API_BASE_URL`, defaulting to `http://localhost:5000/api`. The backend stores users and documents in MongoDB, extracts text from uploaded PDFs, and uses OpenAI for AI features when `OPENAI_API_KEY` is configured.
 
 ## Setup
 
@@ -43,7 +43,7 @@ The frontend talks to the backend through `VITE_API_BASE_URL`, defaulting to `ht
 - Node.js 18 or newer
 - npm
 - MongoDB running locally or a MongoDB connection string
-- Gemini API key for AI generation features
+- OpenAI API key for AI generation features
 
 ### Backend
 
@@ -79,10 +79,9 @@ Open `http://localhost:5173`.
 | `CLIENT_URL` | Allowed frontend origin for CORS | `http://localhost:5173` |
 | `JWT_SECRET` | Secret used to sign JWTs | `replace_with_a_strong_secret_key` |
 | `JWT_EXPIRES_IN` | JWT lifetime | `7d` |
-| `GEMINI_API_KEY` | Gemini API key for AI features | `your_api_key` |
-| `GEMINI_MODEL` | Optional Gemini model override | `gemini-flash-lite-latest` |
-| `GEMINI_TIMEOUT_MS` | Gemini request timeout | `30000` |
-| `GEMINI_API_BASE_URL` | Optional Gemini API base URL | `https://generativelanguage.googleapis.com/v1beta` |
+| `OPENAI_API_KEY` | OpenAI API key for AI features | `your_openai_api_key` |
+| `OPENAI_MODEL` | Optional OpenAI model override | `gpt-4.1-mini` |
+| `OPENAI_TIMEOUT_MS` | OpenAI request timeout | `30000` |
 | `AI_SERVICE_URL` | Optional external analysis service URL | `http://127.0.0.1:8000` |
 | `AI_SERVICE_TIMEOUT_MS` | External analysis service timeout | `15000` |
 
