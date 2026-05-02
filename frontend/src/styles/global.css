@@ -274,7 +274,7 @@ a {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -347,7 +347,7 @@ a {
 
 .upload-row-main {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) minmax(160px, auto) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, auto) auto;
   gap: 14px;
   align-items: center;
   min-width: 0;
@@ -620,7 +620,82 @@ a {
 }
 
 .details-header h2 {
+  margin: 0;
   font-size: 34px;
+}
+
+.document-action-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+
+.workspace-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.workspace-tab-button {
+  min-height: 40px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.workspace-tab-button:hover {
+  color: var(--text);
+  background: var(--surface-strong);
+}
+
+.workspace-tab-button.active {
+  color: #ffffff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.workspace-tab-content {
+  display: grid;
+  gap: 20px;
+  animation: workspace-tab-enter 180ms ease;
+  scroll-margin-top: 84px;
+}
+
+.workspace-tab-panel {
+  min-width: 0;
+}
+
+@keyframes workspace-tab-enter {
+  from {
+    opacity: 0.75;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .export-actions {
@@ -633,7 +708,7 @@ a {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -686,6 +761,20 @@ a {
   white-space: pre-wrap;
   line-height: 1.7;
   font-size: 14px;
+}
+
+.raw-text-details {
+  display: grid;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.raw-text-details summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .details-sidebar {
@@ -1434,12 +1523,12 @@ a {
   }
 
   .upload-row-main {
-    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .upload-tags,
   .upload-status {
-    grid-column: 2;
+    grid-column: 1;
     justify-content: flex-start;
   }
 
@@ -1463,9 +1552,34 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .details-header,
+  .document-action-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .document-action-header {
+    top: 0;
+  }
+
+  .workspace-tabs {
+    padding-bottom: 2px;
+  }
+
+  .workspace-tab-button,
+  .document-action-header .secondary-button,
+  .document-action-header .primary-button {
+    min-height: 42px;
+  }
+
   .export-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .document-action-header .export-actions .primary-button,
+  .document-action-header .export-actions .secondary-button {
+    flex: 1 1 140px;
   }
 
   .summary-card strong {

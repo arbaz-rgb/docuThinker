@@ -2,7 +2,6 @@ const express = require("express");
 const aiRoutes = require("./ai.routes");
 const authRoutes = require("./auth.routes");
 const documentRoutes = require("./document.routes");
-const uploadRoutes = require("./upload.routes");
 
 const router = express.Router();
 
@@ -15,7 +14,6 @@ router.get("/health", (req, res) => {
 });
 
 router.use("/auth", authRoutes);
-router.use("/upload", uploadRoutes);
 router.use("/ai", aiRoutes);
 router.use("/documents", documentRoutes);
 

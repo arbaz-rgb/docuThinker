@@ -7,7 +7,6 @@ const InterviewModePage = () => {
   const { documentId } = useParams();
   const [result, setResult] = useState("");
   const [documentTitle, setDocumentTitle] = useState("");
-  const [model, setModel] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -19,7 +18,6 @@ const InterviewModePage = () => {
       const data = await generateInterviewMode(documentId);
       setResult(data.result);
       setDocumentTitle(data.document?.title || "");
-      setModel(data.model || "");
     } catch (requestError) {
       setError(
         requestError.response?.data?.message ||
@@ -55,7 +53,6 @@ const InterviewModePage = () => {
         </div>
         <div className="interview-hero-copy">
           <span className="tag">Interview prep</span>
-          {model ? <span className="tag">{model}</span> : null}
         </div>
       </div>
 

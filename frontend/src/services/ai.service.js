@@ -5,6 +5,11 @@ export const askPdfQuestion = async (documentId, question) => {
   return response.data.data;
 };
 
+export const generateSummary = async (documentId) => {
+  const response = await api.post(`/ai/documents/${documentId}/summary`);
+  return response.data.data;
+};
+
 export const generateInterviewMode = async (documentId) => {
   const response = await api.post(`/ai/documents/${documentId}/interview-mode`);
   return response.data.data;

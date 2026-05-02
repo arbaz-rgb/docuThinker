@@ -1,11 +1,13 @@
 import api from "./api";
 
-export const uploadPdf = async (file, { onUploadProgress } = {}) => {
-  const formData = new FormData();
-  formData.append("pdf", file);
-  formData.append("title", file.name.replace(/\.pdf$/i, ""));
+const DOCUMENT_EXTENSION_PATTERN = /\.(pdf|docx|txt|md)$/i;
 
-  const response = await api.post("/upload/pdf", formData, {
+export const uploadDocument = async (file, { onUploadProgress } = {}) => {
+  const formData = new FormData();
+  formData.append("document", file);
+  formData.append("title", file.name.replace(DOCUMENT_EXTENSION_PATTERN, ""));
+
+  const response = await api.post("/upload/document", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -14,3 +16,5 @@ export const uploadPdf = async (file, { onUploadProgress } = {}) => {
 
   return response.data.data.document;
 };
+
+export const uploadPdf = uploadDocument;

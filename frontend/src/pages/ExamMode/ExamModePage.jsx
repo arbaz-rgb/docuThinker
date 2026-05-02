@@ -6,7 +6,6 @@ const ExamModePage = () => {
   const { documentId } = useParams();
   const [result, setResult] = useState("");
   const [documentTitle, setDocumentTitle] = useState("");
-  const [model, setModel] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -18,7 +17,6 @@ const ExamModePage = () => {
       const data = await generateExamMode(documentId);
       setResult(data.result);
       setDocumentTitle(data.document?.title || "");
-      setModel(data.model || "");
     } catch (requestError) {
       setError(
         requestError.response?.data?.message ||
@@ -46,7 +44,6 @@ const ExamModePage = () => {
           <span className="tag">MCQs</span>
           <span className="tag">Short answers</span>
           <span className="tag">Long answers</span>
-          {model ? <span className="tag">{model}</span> : null}
         </div>
       </div>
 

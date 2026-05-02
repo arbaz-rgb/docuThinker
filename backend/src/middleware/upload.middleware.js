@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+const { validateDocumentFileNameAndType } = require("../validations/document.validation");
 
 const uploadDir = path.join(__dirname, "..", "uploads", "documents");
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -20,29 +21,25 @@ const storage = multer.diskStorage({
   },
 });
 
-const pdfFileFilter = (req, file, cb) => {
-  const extension = path.extname(file.originalname).toLowerCase();
-  const isPdf = file.mimetype === "application/pdf" && extension === ".pdf";
-
-  if (!isPdf) {
-    const error = new Error("Only PDF files are allowed");
-    error.statusCode = 400;
-    return cb(error);
+const documentFileFilter = (req, file, cb) => {
+  try {
+    validateDocumentFileNameAndType(file);
+    cb(null, true);
+  } catch (error) {
+    cb(error);
   }
-
-  cb(null, true);
 };
 
-const uploadPdf = multer({
+const uploadDocument = multer({
   storage,
-  fileFilter: pdfFileFilter,
+  fileFilter: documentFileFilter,
   limits: {
     fileSize: MAX_FILE_SIZE,
   },
 });
 
 module.exports = {
-  uploadPdf,
+  uploadDocument,
   uploadDir,
   MAX_FILE_SIZE,
 };

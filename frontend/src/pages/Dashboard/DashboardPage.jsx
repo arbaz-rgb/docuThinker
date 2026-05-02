@@ -53,13 +53,11 @@ const DashboardPage = () => {
     const total = pagination?.total ?? documents.length;
     const processed = documents.filter((document) => document.status === "processed").length;
     const totalWords = documents.reduce((sum, document) => sum + (document.wordCount || 0), 0);
-    const classifications = new Set(documents.map((document) => document.classification).filter(Boolean));
 
     return [
       { label: "Total uploads", value: String(total), detail: `${documents.length} shown` },
       { label: "Processed", value: String(processed), detail: "Ready for study" },
       { label: "Words indexed", value: totalWords.toLocaleString(), detail: "Across latest documents" },
-      { label: "Doc types", value: String(classifications.size), detail: "Detected classifications" },
     ];
   }, [documents, pagination]);
 
@@ -114,7 +112,7 @@ const DashboardPage = () => {
 
   const quickActions = [
     {
-      title: "Upload PDF",
+      title: "Upload Document",
       description: "Add a new document for analysis.",
       path: ROUTES.upload,
       disabled: false,
@@ -152,7 +150,7 @@ const DashboardPage = () => {
         <div className="dashboard-hero-card">
           <p className="section-label">Latest</p>
           <strong>{firstDocument ? firstDocument.title : "No documents yet"}</strong>
-          <span>{firstDocument ? `${firstDocument.wordCount || 0} words indexed` : "Upload a PDF to begin."}</span>
+          <span>{firstDocument ? `${firstDocument.wordCount || 0} words indexed` : "Upload a document to begin."}</span>
         </div>
       </div>
 
@@ -188,13 +186,11 @@ const DashboardPage = () => {
               {documents.map((document) => (
                 <article key={document._id} className="upload-row">
                   <Link className="upload-row-main upload-row-link" to={getDocumentPath(document._id)}>
-                    <div className="upload-badge">PDF</div>
                     <div className="upload-copy">
                       <strong>{document.title}</strong>
                       <span>{formatDate(document.createdAt)}</span>
                     </div>
                     <div className="upload-tags">
-                      <span className="tag">{document.classification || "Unknown"}</span>
                       <span className="tag">{document.pageCount || 0} pages</span>
                     </div>
                     <div className="upload-status">{document.status}</div>
@@ -213,7 +209,7 @@ const DashboardPage = () => {
               ))}
             </div>
           ) : (
-            <div className="empty-state">No documents found. Upload a PDF to start.</div>
+            <div className="empty-state">No documents found. Upload a document to start.</div>
           )}
         </section>
 

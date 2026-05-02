@@ -1,6 +1,29 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { uploadPdf } from "../../services/upload.service";
+import { uploadDocument } from "../../services/upload.service";
+
+const ACCEPTED_DOCUMENT_TYPES =
+  ".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown";
+
+const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md"];
+const SUPPORTED_MIME_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "text/markdown",
+];
+
+const getFileExtension = (fileName) => {
+  const extension = fileName.toLowerCase().match(/\.[^.]+$/)?.[0] || "";
+  return extension;
+};
+
+const getFileBadge = (fileName) => getFileExtension(fileName).replace(".", "").toUpperCase() || "DOC";
+
+const isSupportedDocument = (file) => {
+  const extension = getFileExtension(file.name);
+  return SUPPORTED_EXTENSIONS.includes(extension) && SUPPORTED_MIME_TYPES.includes(file.type);
+};
 
 const formatSize = (size) => {
   if (size < 1024 * 1024) {
@@ -26,6 +49,7 @@ const UploadPage = () => {
         id: `${file.name}-${file.lastModified}`,
         name: file.name,
         size: formatSize(file.size),
+        badge: getFileBadge(file.name),
         status: statusMap[file.name] || "Ready",
         progress: progressMap[file.name] || 0,
       })),
@@ -33,25 +57,28 @@ const UploadPage = () => {
   );
 
   const handleFiles = (files) => {
-    const pdfFiles = Array.from(files).filter(
-      (file) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
-    );
+    const documentFiles = Array.from(files).filter(isSupportedDocument);
 
-    if (pdfFiles.length === 0) {
-      setError("Select at least one PDF file.");
+    if (documentFiles.length === 0) {
+      setError("Select at least one supported document: PDF, DOCX, TXT, or MD.");
       return;
     }
 
-    setError("");
-    setSelectedFiles(pdfFiles);
+    if (documentFiles.length !== files.length) {
+      setError("Some files were skipped. Supported document types are PDF, DOCX, TXT, and MD.");
+    } else {
+      setError("");
+    }
+
+    setSelectedFiles(documentFiles);
     setProgressMap(
-      pdfFiles.reduce((accumulator, file) => {
+      documentFiles.reduce((accumulator, file) => {
         accumulator[file.name] = 0;
         return accumulator;
       }, {})
     );
     setStatusMap(
-      pdfFiles.reduce((accumulator, file) => {
+      documentFiles.reduce((accumulator, file) => {
         accumulator[file.name] = "Ready";
         return accumulator;
       }, {})
@@ -89,7 +116,7 @@ const UploadPage = () => {
       setStatusMap((current) => ({ ...current, [file.name]: "Uploading" }));
 
       try {
-        const document = await uploadPdf(file, {
+        const document = await uploadDocument(file, {
           onUploadProgress: (event) => {
             if (!event.total) {
               return;
@@ -132,7 +159,7 @@ const UploadPage = () => {
       <div className="upload-header">
         <div>
           <p className="section-label">Upload</p>
-          <h2>Add PDFs</h2>
+          <h2>Upload Document</h2>
           <p className="muted">Drop files in, preview them, and upload them for document analysis.</p>
         </div>
         <button className="text-button" type="button" onClick={() => inputRef.current?.click()} disabled={isUploading}>
@@ -154,17 +181,17 @@ const UploadPage = () => {
         >
           <input
             ref={inputRef}
-            accept="application/pdf"
+            accept={ACCEPTED_DOCUMENT_TYPES}
             multiple
             onChange={handleInputChange}
             type="file"
             hidden
           />
 
-          <div className="dropzone-icon">PDF</div>
+          <div className="dropzone-icon">DOC</div>
           <div className="dropzone-copy">
-            <strong>Drag and drop PDFs here</strong>
-            <span>or browse from your device to add files to the queue.</span>
+            <strong>Drag & drop your document (.pdf, .docx, .txt, .md)</strong>
+            <span>or browse from your device to add supported files to the queue.</span>
           </div>
           <button className="primary-button" type="button" onClick={() => inputRef.current?.click()} disabled={isUploading}>
             Select files
@@ -184,7 +211,7 @@ const UploadPage = () => {
               {previews.map((file) => (
                 <article key={file.id} className="preview-item">
                   <div className="preview-meta">
-                    <div className="upload-badge">PDF</div>
+                    <div className="upload-badge">{file.badge}</div>
                     <div className="upload-copy">
                       <strong>{file.name}</strong>
                       <span>{file.size}</span>

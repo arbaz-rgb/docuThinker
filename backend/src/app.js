@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 
 const routes = require("./routes");
+const uploadRoutes = require("./routes/upload.routes");
 const { notFound, errorHandler } = require("./middleware/error.middleware");
 
 const app = express();
@@ -43,6 +44,7 @@ app.get("/", (req, res) => {
   });
 });
 
+app.use("/api/upload", uploadRoutes);
 app.use("/api", routes);
 
 app.use(notFound);
