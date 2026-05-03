@@ -23,20 +23,20 @@ export const getAuthUser = () => {
 };
 
 export const login = async (credentials) => {
-  const response = await api.post("/auth/login", credentials);
+  const response = await api.post("/api/auth/login", credentials);
   const session = response.data.data;
   storeAuthSession(session);
   return session;
 };
 
 export const register = async (payload) => {
-  const response = await api.post("/auth/register", payload);
+  const response = await api.post("/api/auth/register", payload);
   const session = response.data.data;
   storeAuthSession(session);
   return session;
 };
 
 export const fetchCurrentUser = async () => {
-  const response = await api.get("/auth/me");
+  const response = await api.get("/api/auth/me");
   return response.data.data.user;
 };

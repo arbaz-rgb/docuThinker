@@ -7,7 +7,7 @@ export const uploadDocument = async (file, { onUploadProgress } = {}) => {
   formData.append("document", file);
   formData.append("title", file.name.replace(DOCUMENT_EXTENSION_PATTERN, ""));
 
-  const response = await api.post("/upload/document", formData, {
+  const response = await api.post("/api/upload/document", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },

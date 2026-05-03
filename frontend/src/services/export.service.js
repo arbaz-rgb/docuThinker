@@ -19,7 +19,7 @@ const downloadBlob = (blob, filename) => {
 
 export const exportSummary = async (documentId, format) => {
   const extension = format === "pdf" ? "pdf" : "txt";
-  const response = await api.get(`/documents/${documentId}/export/summary.${extension}`, {
+  const response = await api.get(`/api/documents/${documentId}/export/summary.${extension}`, {
     responseType: "blob",
   });
   const filename = getFilenameFromDisposition(
