@@ -5,6 +5,7 @@ import AuthForm from "../../components/auth/AuthForm.jsx";
 import AuthLayout from "../../components/auth/AuthLayout.jsx";
 import { ROUTES } from "../../constants/routes";
 import { useAppData } from "../../context/AppDataContext.jsx";
+import { getApiErrorMessage } from "../../services/api";
 import { login } from "../../services/auth.service";
 
 const loginFields = [
@@ -63,7 +64,7 @@ const LoginPage = () => {
       await loadInitialData({ force: true });
       navigate(redirectTo, { replace: true });
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Login failed. Check your email and password.");
+      setError(getApiErrorMessage(requestError, "Login failed. Check your email and password."));
     } finally {
       setIsSubmitting(false);
     }

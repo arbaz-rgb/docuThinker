@@ -5,6 +5,7 @@ import AuthForm from "../../components/auth/AuthForm.jsx";
 import AuthLayout from "../../components/auth/AuthLayout.jsx";
 import { ROUTES } from "../../constants/routes";
 import { useAppData } from "../../context/AppDataContext.jsx";
+import { getApiErrorMessage } from "../../services/api";
 import { register } from "../../services/auth.service";
 
 const registerFields = [
@@ -70,7 +71,7 @@ const RegisterPage = () => {
       await loadInitialData({ force: true });
       navigate(ROUTES.dashboard, { replace: true });
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Registration failed. Try a different email.");
+      setError(getApiErrorMessage(requestError, "Registration failed. Try a different email."));
     } finally {
       setIsSubmitting(false);
     }

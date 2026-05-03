@@ -15,8 +15,23 @@ const parseCsvEnv = (value) =>
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+const normalizeOrigin = (origin) => {
+  if (!origin) {
+    return "";
+  }
+
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/+$/, "");
+  }
+};
+
 const allowedOrigins = new Set(
-  parseCsvEnv(process.env.CLIENT_URLS || process.env.CLIENT_URL)
+  [
+    ...parseCsvEnv(process.env.CLIENT_URLS),
+    ...parseCsvEnv(process.env.CLIENT_URL),
+  ].map(normalizeOrigin)
 );
 
 app.use(helmet());
@@ -25,7 +40,9 @@ app.use(
     origin(origin, callback) {
       const allowDevelopmentOrigin = process.env.NODE_ENV !== "production" && allowedOrigins.size === 0;
 
-      if (!origin || allowedOrigins.has(origin) || allowDevelopmentOrigin) {
+      const normalizedOrigin = normalizeOrigin(origin);
+
+      if (!origin || allowedOrigins.has(normalizedOrigin) || allowDevelopmentOrigin) {
         return callback(null, true);
       }
 
