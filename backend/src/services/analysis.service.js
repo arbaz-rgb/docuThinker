@@ -1,4 +1,4 @@
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL?.replace(/\/$/, "");
 const ANALYSIS_TIMEOUT_MS = Number(process.env.AI_SERVICE_TIMEOUT_MS || 15000);
 
 const STOP_WORDS = new Set([
@@ -514,6 +514,10 @@ const analyzeLocally = (text) => {
 };
 
 const analyzeDocumentText = async (text) => {
+  if (!AI_SERVICE_URL) {
+    return analyzeLocally(text);
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ANALYSIS_TIMEOUT_MS);
 

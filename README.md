@@ -1,12 +1,20 @@
 # DocuThinker
 
-DocuThinker is a full-stack document intelligence app for uploading PDFs, extracting text, generating AI study outputs, chatting with documents, and exporting summaries. The current codebase is organized as a React/Vite frontend and an Express/MongoDB backend.
+DocuThinker is a full-stack document intelligence app for uploading documents, extracting text, generating AI study outputs, chatting with documents, and exporting summaries.
+
+The project is prepared for:
+
+- Frontend: Vercel
+- Backend API: Render
+- AI/ML analysis service: Render
+
+Deployment is not automatic from this repository. Configure environment variables in Vercel and Render before deploying.
 
 ## Features
 
 - User registration, login, JWT authentication, and protected app routes
-- PDF upload with server-side validation and text extraction
-- Document dashboard, details view, search, and delete support
+- Document upload with server-side validation and text extraction
+- Dashboard, document details, search, and delete workflows
 - AI summary generation and key insights
 - Ask PDF chat for document-grounded Q&A
 - Interview Mode for likely questions, answer points, follow-ups, and revision topics
@@ -18,32 +26,38 @@ DocuThinker is a full-stack document intelligence app for uploading PDFs, extrac
 
 ```text
 DocuThinker
-|-- frontend/                 React 19 + Vite app
+|-- frontend/                 React + Vite app for Vercel
 |   |-- src/pages             Dashboard, upload, details, Ask PDF, study modes, auth
 |   |-- src/components        Layout and shared UI components
 |   |-- src/services          Axios API clients
 |   |-- src/routes            Public/protected route configuration
-|   `-- src/styles            Global CSS
-`-- backend/                  Express API
-    |-- src/controllers       Request handlers
-    |-- src/routes            API route modules
-    |-- src/models            Mongoose models
-    |-- src/services          OpenAI, export, and analysis services
-    |-- src/middleware        Auth, upload, and error middleware
-    |-- src/utils             Token and text extraction utilities
-    `-- src/uploads           Uploaded PDF storage
+|   `-- vercel.json           Vercel SPA deployment config
+|-- backend/                  Express API for Render
+|   |-- src/controllers       Request handlers
+|   |-- src/routes            API route modules
+|   |-- src/models            Mongoose models
+|   |-- src/services          OpenAI, export, and analysis services
+|   |-- src/middleware        Auth, upload, and error middleware
+|   `-- ai_ml/                FastAPI AI/ML service for Render
+`-- render.yaml               Render Blueprint for backend and AI/ML services
 ```
 
-The frontend talks to the backend through `VITE_API_BASE_URL`, defaulting to `http://localhost:5000/api`. The backend stores users and documents in MongoDB, extracts text from uploaded PDFs, and uses OpenAI for AI features when `OPENAI_API_KEY` is configured.
+## Runtime Flow
 
-## Setup
+1. The Vercel frontend calls the backend through `VITE_API_BASE_URL`.
+2. The Render backend handles auth, uploads, MongoDB persistence, OpenAI generation, and exports.
+3. The backend optionally calls the Render AI/ML service through `AI_SERVICE_URL`.
+4. If `AI_SERVICE_URL` is not set, the backend falls back to local in-process analysis.
 
-### Prerequisites
+## Prerequisites
 
 - Node.js 18 or newer
 - npm
-- MongoDB running locally or a MongoDB connection string
+- Python 3.11 or newer for the AI/ML service
+- MongoDB Atlas or another production MongoDB connection string
 - OpenAI API key for AI generation features
+
+## Local Development
 
 ### Backend
 
@@ -54,7 +68,7 @@ copy .env.example .env
 npm run dev
 ```
 
-Update `backend/.env` before starting the server.
+For local development, set `NODE_ENV=development`, a local or Atlas `MONGO_URI`, and local frontend origins in `CLIENT_URLS`.
 
 ### Frontend
 
@@ -65,31 +79,172 @@ copy .env.example .env
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Set `VITE_API_BASE_URL` to your backend API URL, for example a local backend ending in `/api`.
+
+### AI/ML Service
+
+```bash
+cd backend/ai_ml
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Set the backend `AI_SERVICE_URL` to this service if you want the backend to call it locally.
 
 ## Environment Variables
 
-### Backend
-
-| Variable | Description | Example |
-| --- | --- | --- |
-| `PORT` | Backend port | `5000` |
-| `NODE_ENV` | Runtime environment | `development` |
-| `MONGO_URI` | MongoDB connection string | `mongodb://127.0.0.1:27017/docuthinker` |
-| `CLIENT_URL` | Allowed frontend origin for CORS | `http://localhost:5173` |
-| `JWT_SECRET` | Secret used to sign JWTs | `replace_with_a_strong_secret_key` |
-| `JWT_EXPIRES_IN` | JWT lifetime | `7d` |
-| `OPENAI_API_KEY` | OpenAI API key for AI features | `your_openai_api_key` |
-| `OPENAI_MODEL` | Optional OpenAI model override | `gpt-4.1-mini` |
-| `OPENAI_TIMEOUT_MS` | OpenAI request timeout | `30000` |
-| `AI_SERVICE_URL` | Optional external analysis service URL | `http://127.0.0.1:8000` |
-| `AI_SERVICE_TIMEOUT_MS` | External analysis service timeout | `15000` |
+Use the checked-in `.env.example` files as templates. Do not commit real `.env` files or secrets.
 
 ### Frontend
 
-| Variable | Description | Example |
-| --- | --- | --- |
-| `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:5000/api` |
+File: `frontend/.env.example`
+
+| Variable | Required | Description | Production example |
+| --- | --- | --- | --- |
+| `VITE_API_BASE_URL` | Yes | Backend API base URL. Must include `/api`. | `https://your-docuthinker-backend.onrender.com/api` |
+
+### Backend
+
+File: `backend/.env.example`
+
+| Variable | Required | Description | Production example |
+| --- | --- | --- | --- |
+| `PORT` | Render sets this | HTTP port | `10000` |
+| `NODE_ENV` | Yes | Runtime environment | `production` |
+| `MONGO_URI` | Yes | MongoDB connection string | `mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/docuthinker` |
+| `CLIENT_URLS` | Yes | Comma-separated allowed frontend origins for CORS | `https://your-docuthinker-frontend.vercel.app` |
+| `JWT_SECRET` | Yes | Long random JWT signing secret | `replace_with_a_long_random_secret` |
+| `JWT_EXPIRES_IN` | No | JWT lifetime | `7d` |
+| `AI_SERVICE_URL` | No | AI/ML service URL | `https://your-docuthinker-ai.onrender.com` |
+| `AI_SERVICE_TIMEOUT_MS` | No | AI/ML request timeout | `15000` |
+| `OPENAI_API_KEY` | Yes | OpenAI API key | `sk-...` |
+| `OPENAI_MODEL` | No | OpenAI model override | `gpt-4.1-mini` |
+| `OPENAI_TIMEOUT_MS` | No | OpenAI request timeout | `30000` |
+
+### AI/ML
+
+File: `backend/ai_ml/.env.example`
+
+| Variable | Required | Description | Production example |
+| --- | --- | --- | --- |
+| `ALLOWED_ORIGINS` | Yes | Comma-separated origins allowed by the AI/ML service | `https://your-docuthinker-backend.onrender.com` |
+
+## Deployment Configuration
+
+### Frontend on Vercel
+
+Use `frontend/vercel.json`.
+
+Recommended Vercel settings:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `frontend` |
+| Framework preset | Vite |
+| Install command | `npm ci` |
+| Build command | `npm run build` |
+| Output directory | `dist` |
+
+Required Vercel environment variable:
+
+```text
+VITE_API_BASE_URL=https://your-docuthinker-backend.onrender.com/api
+```
+
+The Vercel config includes an SPA rewrite so React Router routes load correctly on refresh.
+
+### Backend on Render
+
+Use the backend service in `render.yaml`.
+
+Recommended Render settings:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `backend` |
+| Runtime | Node |
+| Build command | `npm ci` |
+| Start command | `npm start` |
+| Health check path | `/api/health` |
+
+Required backend environment variables:
+
+```text
+NODE_ENV=production
+MONGO_URI=...
+CLIENT_URLS=https://your-docuthinker-frontend.vercel.app
+JWT_SECRET=...
+OPENAI_API_KEY=...
+```
+
+Optional backend environment variables:
+
+```text
+JWT_EXPIRES_IN=7d
+AI_SERVICE_URL=https://your-docuthinker-ai.onrender.com
+AI_SERVICE_TIMEOUT_MS=15000
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_TIMEOUT_MS=30000
+```
+
+### AI/ML Service on Render
+
+Use the AI/ML service in `render.yaml`.
+
+Recommended Render settings:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `backend/ai_ml` |
+| Runtime | Python |
+| Build command | `pip install -r requirements.txt` |
+| Start command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| Health check path | `/health` |
+
+Required AI/ML environment variable:
+
+```text
+ALLOWED_ORIGINS=https://your-docuthinker-backend.onrender.com
+```
+
+## Production Notes
+
+- The frontend has no localhost fallback. `VITE_API_BASE_URL` must be set.
+- Backend CORS is controlled by `CLIENT_URLS` / `CLIENT_URL`.
+- AI/ML CORS is controlled by `ALLOWED_ORIGINS`.
+- Backend AI analysis does not require the separate AI/ML service; it falls back to local analysis if `AI_SERVICE_URL` is unset.
+- Uploaded files are currently stored on the backend filesystem. Render free instances have ephemeral disks, so durable production uploads require a persistent disk or object storage before real production traffic.
+- Keep real secrets only in Vercel/Render environment variables.
+
+## Verification
+
+Run these checks before deployment.
+
+### Frontend
+
+```bash
+cd frontend
+$env:VITE_API_BASE_URL="https://your-docuthinker-backend.onrender.com/api"
+npm run build
+```
+
+### Backend
+
+```bash
+cd backend
+npm run build
+npm start
+```
+
+### AI/ML
+
+```bash
+cd backend/ai_ml
+python -m compileall app
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
 
 ## API Routes
 
@@ -113,7 +268,7 @@ Base URL: `/api`
 
 | Method | Route | Description |
 | --- | --- | --- |
-| `POST` | `/upload/pdf` | Upload a PDF using multipart field `pdf` |
+| `POST` | `/upload/pdf` | Upload a document using multipart field `pdf` |
 
 ### Documents
 
@@ -140,21 +295,4 @@ Authenticated routes require:
 
 ```http
 Authorization: Bearer <token>
-```
-
-## Scripts
-
-### Backend
-
-```bash
-npm run dev
-npm start
-```
-
-### Frontend
-
-```bash
-npm run dev
-npm run build
-npm run preview
 ```

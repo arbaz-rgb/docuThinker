@@ -9,18 +9,23 @@ const { notFound, errorHandler } = require("./middleware/error.middleware");
 
 const app = express();
 
-const allowedOrigins = new Set(
-  (process.env.CLIENT_URLS || process.env.CLIENT_URL || "http://localhost:5173,http://127.0.0.1:5173")
+const parseCsvEnv = (value) =>
+  String(value || "")
     .split(",")
     .map((origin) => origin.trim())
-    .filter(Boolean)
+    .filter(Boolean);
+
+const allowedOrigins = new Set(
+  parseCsvEnv(process.env.CLIENT_URLS || process.env.CLIENT_URL)
 );
 
 app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.has(origin)) {
+      const allowDevelopmentOrigin = process.env.NODE_ENV !== "production" && allowedOrigins.size === 0;
+
+      if (!origin || allowedOrigins.has(origin) || allowDevelopmentOrigin) {
         return callback(null, true);
       }
 

@@ -4,6 +4,7 @@
   "description": "Backend API for DocuThinker document summarization and query assistant.",
   "main": "src/server.js",
   "scripts": {
+    "build": "node -e \"require('./src/app'); console.log('Backend build check passed')\"",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   },
