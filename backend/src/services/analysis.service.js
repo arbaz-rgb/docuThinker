@@ -1,4 +1,4 @@
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL?.replace(/\/$/, "");
+const AI_ML_URL = process.env.AI_ML_URL?.replace(/\/$/, "");
 const ANALYSIS_TIMEOUT_MS = Number(process.env.AI_SERVICE_TIMEOUT_MS || 15000);
 
 const STOP_WORDS = new Set([
@@ -514,7 +514,7 @@ const analyzeLocally = (text) => {
 };
 
 const analyzeDocumentText = async (text) => {
-  if (!AI_SERVICE_URL) {
+  if (!AI_ML_URL) {
     return analyzeLocally(text);
   }
 
@@ -522,7 +522,7 @@ const analyzeDocumentText = async (text) => {
   const timeout = setTimeout(() => controller.abort(), ANALYSIS_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${AI_SERVICE_URL}/api/analysis/analyze`, {
+    const response = await fetch(`${AI_ML_URL}/api/analysis/analyze`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

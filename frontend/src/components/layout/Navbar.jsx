@@ -5,7 +5,7 @@ import { clearAuthSession, getAuthUser } from "../../services/auth.service";
 import LogoMark from "../common/LogoMark.jsx";
 import ThemeToggle from "../common/ThemeToggle.jsx";
 
-const Navbar = () => {
+const Navbar = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const { resetAppData, user: cachedUser } = useAppData();
   const user = cachedUser || getAuthUser();
@@ -19,6 +19,11 @@ const Navbar = () => {
   return (
     <header className="navbar">
       <div className="navbar-brand">
+        <button className="menu-button" type="button" aria-label="Open navigation" onClick={onMenuClick}>
+          <span />
+          <span />
+          <span />
+        </button>
         <LogoMark className="navbar-logo" />
         <div>
           <p className="navbar-eyebrow">Workspace</p>

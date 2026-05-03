@@ -18,7 +18,7 @@ services:
         sync: false
       - key: JWT_EXPIRES_IN
         value: 7d
-      - key: AI_SERVICE_URL
+      - key: AI_ML_URL
         sync: false
       - key: AI_SERVICE_TIMEOUT_MS
         value: 15000

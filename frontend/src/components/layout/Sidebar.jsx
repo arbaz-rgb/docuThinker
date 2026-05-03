@@ -8,7 +8,7 @@ const navItems = [
   { label: "Profile", path: ROUTES.profile },
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ onNavigate }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -21,6 +21,7 @@ const Sidebar = () => {
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={onNavigate}
             className={({ isActive }) => `sidebar-link${isActive ? " active" : ""}`}
           >
             {item.label}
