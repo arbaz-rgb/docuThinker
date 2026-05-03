@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { ROUTES } from "../../constants/routes";
-import { deleteDocument, fetchDocuments } from "../../services/document.service";
+import { useAppData } from "../../context/AppDataContext.jsx";
+import { deleteDocument } from "../../services/document.service";
 
 const formatDate = (value) => {
   if (!value) {
@@ -18,50 +19,49 @@ const getDocumentPath = (documentId, suffix = "") => `/documents/${documentId}${
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const [documents, setDocuments] = useState([]);
-  const [pagination, setPagination] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    areDocumentsLoaded,
+    areDocumentsLoading,
+    documents,
+    loadDocuments,
+    pagination,
+    removeDocumentFromCache,
+  } = useAppData();
   const [error, setError] = useState("");
   const [documentToDelete, setDocumentToDelete] = useState(null);
   const [deletingDocumentId, setDeletingDocumentId] = useState("");
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    const loadDocuments = async () => {
-      setIsLoading(true);
-      setError("");
+    if (areDocumentsLoaded || areDocumentsLoading) {
+      return;
+    }
 
-      try {
-        const data = await fetchDocuments({ page: 1, limit: 8 });
-        setDocuments(data.documents || []);
-        setPagination(data.pagination || null);
-      } catch (requestError) {
-        setError(
-          requestError.response?.data?.message ||
-            requestError.message ||
-            "Unable to load documents."
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setError("");
+    loadDocuments().catch((requestError) => {
+      setError(
+        requestError.response?.data?.message ||
+          requestError.message ||
+          "Unable to load documents."
+      );
+    });
+  }, [areDocumentsLoaded, areDocumentsLoading, loadDocuments]);
 
-    loadDocuments();
-  }, []);
+  const visibleDocuments = useMemo(() => documents.slice(0, 8), [documents]);
 
   const stats = useMemo(() => {
-    const total = pagination?.total ?? documents.length;
-    const processed = documents.filter((document) => document.status === "processed").length;
-    const totalWords = documents.reduce((sum, document) => sum + (document.wordCount || 0), 0);
+    const total = pagination?.total ?? visibleDocuments.length;
+    const processed = visibleDocuments.filter((document) => document.status === "processed").length;
+    const totalWords = visibleDocuments.reduce((sum, document) => sum + (document.wordCount || 0), 0);
 
     return [
-      { label: "Total uploads", value: String(total), detail: `${documents.length} shown` },
+      { label: "Total uploads", value: String(total), detail: `${visibleDocuments.length} shown` },
       { label: "Processed", value: String(processed), detail: "Ready for study" },
       { label: "Words indexed", value: totalWords.toLocaleString(), detail: "Across latest documents" },
     ];
-  }, [documents, pagination]);
+  }, [pagination, visibleDocuments]);
 
-  const firstDocument = documents[0];
+  const firstDocument = visibleDocuments[0];
 
   const closeDeleteModal = () => {
     if (!deletingDocumentId) {
@@ -85,17 +85,7 @@ const DashboardPage = () => {
 
     try {
       await deleteDocument(documentToDelete._id);
-      setDocuments((currentDocuments) =>
-        currentDocuments.filter((document) => document._id !== documentToDelete._id)
-      );
-      setPagination((currentPagination) =>
-        currentPagination
-          ? {
-              ...currentPagination,
-              total: Math.max((currentPagination.total || 0) - 1, 0),
-            }
-          : currentPagination
-      );
+      removeDocumentFromCache(documentToDelete._id);
       setDocumentToDelete(null);
       showToast("success", "Document deleted successfully.");
     } catch (requestError) {
@@ -179,11 +169,11 @@ const DashboardPage = () => {
             </button>
           </div>
 
-          {isLoading ? (
+          {areDocumentsLoading && !areDocumentsLoaded ? (
             <div className="empty-state">Loading documents...</div>
-          ) : documents.length > 0 ? (
+          ) : visibleDocuments.length > 0 ? (
             <div className="upload-list">
-              {documents.map((document) => (
+              {visibleDocuments.map((document) => (
                 <article key={document._id} className="upload-row">
                   <Link className="upload-row-main upload-row-link" to={getDocumentPath(document._id)}>
                     <div className="upload-copy">

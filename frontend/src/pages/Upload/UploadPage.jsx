@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAppData } from "../../context/AppDataContext.jsx";
 import { uploadDocument } from "../../services/upload.service";
 
 const ACCEPTED_DOCUMENT_TYPES =
@@ -35,6 +36,7 @@ const formatSize = (size) => {
 
 const UploadPage = () => {
   const navigate = useNavigate();
+  const { addDocumentsToCache } = useAppData();
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -146,6 +148,7 @@ const UploadPage = () => {
     setIsUploading(false);
 
     if (uploadedDocuments.length === selectedFiles.length && uploadedDocuments[0]?._id) {
+      addDocumentsToCache(uploadedDocuments);
       navigate(`/documents/${uploadedDocuments[0]._id}`);
     }
   };

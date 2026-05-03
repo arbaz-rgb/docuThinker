@@ -1,19 +1,16 @@
-import { useTheme } from "../../context/ThemeContext.jsx";
+import LogoMark from "../common/LogoMark.jsx";
+import ThemeToggle from "../common/ThemeToggle.jsx";
 
 const featureHighlights = ["Summarize", "Ask PDF", "Interview", "Exam"];
 
 const AuthLayout = ({ eyebrow, title, subtitle, children }) => {
-  const { isDark, toggleTheme } = useTheme();
-
   return (
     <main className="auth-page auth-shell">
-      <button className="auth-theme-toggle" type="button" onClick={toggleTheme} aria-label="Toggle theme">
-        <span>{isDark ? "Light" : "Dark"}</span>
-      </button>
+      <ThemeToggle className="auth-theme-toggle" />
 
       <section className="auth-hero-panel" aria-label="DocuThinker overview">
         <div className="auth-brand">
-          <span className="auth-brand-mark">D</span>
+          <LogoMark className="auth-brand-mark" />
           <span>DocuThinker</span>
         </div>
 

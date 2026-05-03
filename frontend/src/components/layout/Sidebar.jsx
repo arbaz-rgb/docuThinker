@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { ROUTES } from "../../constants/routes";
+import LogoMark from "../common/LogoMark.jsx";
 
 const navItems = [
   { label: "Dashboard", path: ROUTES.dashboard },
@@ -11,7 +12,7 @@ const Sidebar = () => {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <span className="brand-mark">D</span>
+        <LogoMark />
         <span>DocuThinker</span>
       </div>
 

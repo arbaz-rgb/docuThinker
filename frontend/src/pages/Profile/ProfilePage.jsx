@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "../../components/common/ThemeToggle.jsx";
 import { ROUTES } from "../../constants/routes";
+import { useAppData } from "../../context/AppDataContext.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
-import { fetchDocuments } from "../../services/document.service";
-import { fetchCurrentUser, getAuthUser } from "../../services/auth.service";
 
 const formatDate = (value, fallback = "Not available") => {
   if (!value) {
@@ -55,36 +55,49 @@ const getInitials = (name = "") => {
 };
 
 const ProfilePage = () => {
-  const { theme, toggleTheme } = useTheme();
-  const [user, setUser] = useState(() => getAuthUser());
-  const [documents, setDocuments] = useState([]);
-  const [pagination, setPagination] = useState(null);
+  const { theme } = useTheme();
+  const {
+    areDocumentsLoaded,
+    areDocumentsLoading,
+    documents,
+    isUserLoaded,
+    isUserLoading,
+    loadDocuments,
+    loadUser,
+    pagination,
+    user,
+  } = useAppData();
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadProfile = async () => {
-      setError("");
+    if (isUserLoaded || isUserLoading) {
+      return;
+    }
 
-      try {
-        const [currentUser, documentData] = await Promise.all([
-          fetchCurrentUser(),
-          fetchDocuments({ page: 1, limit: 50 }),
-        ]);
+    setError("");
+    loadUser().catch((requestError) => {
+      setError(
+        requestError.response?.data?.message ||
+          requestError.message ||
+          "Unable to load the latest profile details."
+      );
+    });
+  }, [isUserLoaded, isUserLoading, loadUser]);
 
-        setUser(currentUser);
-        setDocuments(documentData.documents || []);
-        setPagination(documentData.pagination || null);
-      } catch (requestError) {
-        setError(
-          requestError.response?.data?.message ||
-            requestError.message ||
-            "Unable to load the latest profile details."
-        );
-      }
-    };
+  useEffect(() => {
+    if (areDocumentsLoaded || areDocumentsLoading) {
+      return;
+    }
 
-    loadProfile();
-  }, []);
+    setError("");
+    loadDocuments().catch((requestError) => {
+      setError(
+        requestError.response?.data?.message ||
+          requestError.message ||
+          "Unable to load account document stats."
+      );
+    });
+  }, [areDocumentsLoaded, areDocumentsLoading, loadDocuments]);
 
   const profile = {
     name: user?.name || "DocuThinker User",
@@ -203,9 +216,7 @@ const ProfilePage = () => {
                 <strong>Theme</strong>
                 <span>Current mode: {theme}</span>
               </div>
-              <button className="secondary-button" type="button" onClick={toggleTheme}>
-                Switch theme
-              </button>
+              <ThemeToggle />
             </div>
 
             <div className="profile-setting-row">

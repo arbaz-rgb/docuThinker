@@ -4,6 +4,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import AuthForm from "../../components/auth/AuthForm.jsx";
 import AuthLayout from "../../components/auth/AuthLayout.jsx";
 import { ROUTES } from "../../constants/routes";
+import { useAppData } from "../../context/AppDataContext.jsx";
 import { login } from "../../services/auth.service";
 
 const loginFields = [
@@ -27,6 +28,7 @@ const loginFields = [
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { loadInitialData, resetAppData } = useAppData();
   const [values, setValues] = useState({
     email: "",
     password: "",
@@ -53,10 +55,12 @@ const LoginPage = () => {
     setIsSubmitting(true);
 
     try {
+      resetAppData();
       await login({
         email: values.email.trim(),
         password: values.password,
       });
+      await loadInitialData({ force: true });
       navigate(redirectTo, { replace: true });
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Login failed. Check your email and password.");

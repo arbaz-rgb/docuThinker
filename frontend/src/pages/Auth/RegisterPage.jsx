@@ -4,6 +4,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import AuthForm from "../../components/auth/AuthForm.jsx";
 import AuthLayout from "../../components/auth/AuthLayout.jsx";
 import { ROUTES } from "../../constants/routes";
+import { useAppData } from "../../context/AppDataContext.jsx";
 import { register } from "../../services/auth.service";
 
 const registerFields = [
@@ -33,6 +34,7 @@ const registerFields = [
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const { loadInitialData, resetAppData } = useAppData();
   const [values, setValues] = useState({
     name: "",
     email: "",
@@ -59,11 +61,13 @@ const RegisterPage = () => {
     setIsSubmitting(true);
 
     try {
+      resetAppData();
       await register({
         name: values.name.trim(),
         email: values.email.trim(),
         password: values.password,
       });
+      await loadInitialData({ force: true });
       navigate(ROUTES.dashboard, { replace: true });
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Registration failed. Try a different email.");

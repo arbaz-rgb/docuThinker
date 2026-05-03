@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import VoiceChatComposer from "../../components/ask/VoiceChatComposer";
 import AiResponseRenderer from "../../components/ai/AiResponseRenderer";
 import { askPdfQuestion } from "../../services/ai.service";
 
@@ -126,13 +125,21 @@ const AskPdfPage = () => {
           <div ref={bottomRef} />
         </div>
 
-        <VoiceChatComposer
-          disabled={isSending}
-          isSending={isSending}
-          onSubmit={handleSubmit}
-          onValueChange={setInput}
-          value={input}
-        />
+        <form className="chat-composer" onSubmit={handleSubmit}>
+          <label className="chat-input-wrap">
+            <span className="sr-only">Ask a question</span>
+            <input
+              type="text"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Ask something about this PDF..."
+              disabled={isSending}
+            />
+          </label>
+          <button className="primary-button" type="submit" disabled={isSending || !input.trim()}>
+            {isSending ? "Sending..." : "Send"}
+          </button>
+        </form>
       </div>
     </section>
   );
