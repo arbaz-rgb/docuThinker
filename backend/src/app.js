@@ -29,6 +29,7 @@ const normalizeOrigin = (origin) => {
 
 const allowedOrigins = new Set(
   [
+    "https://docuthinker-pi.vercel.app",
     ...parseCsvEnv(process.env.CLIENT_URLS),
     ...parseCsvEnv(process.env.CLIENT_URL),
   ].map(normalizeOrigin)

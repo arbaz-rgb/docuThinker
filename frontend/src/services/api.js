@@ -7,7 +7,7 @@ if (!apiBaseUrl) {
 }
 
 const api = axios.create({
-  baseURL: apiBaseUrl.replace(/\/$/, ""),
+  baseURL: apiBaseUrl.replace(/\/+$/, "").replace(/\/api$/i, ""),
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
