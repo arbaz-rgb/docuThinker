@@ -4,7 +4,6 @@ export const ROUTES = {
   register: "/register",
   dashboard: "/dashboard",
   upload: "/upload",
-  documents: "/documents",
   documentDetails: "/documents/:documentId",
   askPdf: "/documents/:documentId/ask",
   interviewMode: "/documents/:documentId/interview",

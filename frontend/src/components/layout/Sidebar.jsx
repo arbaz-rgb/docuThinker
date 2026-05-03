@@ -4,7 +4,6 @@ import { ROUTES } from "../../constants/routes";
 const navItems = [
   { label: "Dashboard", path: ROUTES.dashboard },
   { label: "Upload", path: ROUTES.upload },
-  { label: "Documents", path: ROUTES.documents },
   { label: "Profile", path: ROUTES.profile },
 ];
 

@@ -21,7 +21,7 @@ const AppRoutes = () => {
         <Route element={<MainLayout />}>
           <Route path={ROUTES.dashboard} element={<DashboardPage />} />
           <Route path={ROUTES.upload} element={<UploadPage />} />
-          <Route path={ROUTES.documents} element={<DashboardPage />} />
+          <Route path="/documents" element={<Navigate to={ROUTES.dashboard} replace />} />
           <Route path={ROUTES.documentDetails} element={<DocumentDetailsPage />} />
           <Route path={ROUTES.askPdf} element={<DocumentDetailsPage />} />
           <Route path={ROUTES.interviewMode} element={<DocumentDetailsPage />} />

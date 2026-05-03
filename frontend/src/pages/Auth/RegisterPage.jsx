@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Navigate, useNavigate } from "react-router-dom";
 import AuthForm from "../../components/auth/AuthForm.jsx";
+import AuthLayout from "../../components/auth/AuthLayout.jsx";
 import { ROUTES } from "../../constants/routes";
 import { register } from "../../services/auth.service";
 
@@ -72,26 +73,26 @@ const RegisterPage = () => {
   };
 
   return (
-    <main className="auth-page">
-      <section className="auth-panel">
-        <p className="section-label">Create workspace</p>
-        <h1>Register</h1>
-        <AuthForm
-          error={error}
-          fields={registerFields}
-          footer={
-            <p className="muted">
-              Already have an account? <Link to={ROUTES.login}>Login</Link>
-            </p>
-          }
-          isSubmitting={isSubmitting}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-          submitLabel="Register"
-          values={values}
-        />
-      </section>
-    </main>
+    <AuthLayout
+      eyebrow="Create workspace"
+      title="Start using DocuThinker"
+      subtitle="Set up your account and turn documents into study-ready intelligence."
+    >
+      <AuthForm
+        error={error}
+        fields={registerFields}
+        footer={
+          <p className="muted auth-footer-copy">
+            Already have an account? <Link to={ROUTES.login}>Login</Link>
+          </p>
+        }
+        isSubmitting={isSubmitting}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        submitLabel="Register"
+        values={values}
+      />
+    </AuthLayout>
   );
 };
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import AuthForm from "../../components/auth/AuthForm.jsx";
+import AuthLayout from "../../components/auth/AuthLayout.jsx";
 import { ROUTES } from "../../constants/routes";
 import { login } from "../../services/auth.service";
 
@@ -65,26 +66,26 @@ const LoginPage = () => {
   };
 
   return (
-    <main className="auth-page">
-      <section className="auth-panel">
-        <p className="section-label">Welcome back</p>
-        <h1>Login</h1>
-        <AuthForm
-          error={error}
-          fields={loginFields}
-          footer={
-            <p className="muted">
-              New here? <Link to={ROUTES.register}>Create an account</Link>
-            </p>
-          }
-          isSubmitting={isSubmitting}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-          submitLabel="Login"
-          values={values}
-        />
-      </section>
-    </main>
+    <AuthLayout
+      eyebrow="Welcome back"
+      title="Login to your workspace"
+      subtitle="Continue summarizing, asking, and revising from your documents."
+    >
+      <AuthForm
+        error={error}
+        fields={loginFields}
+        footer={
+          <p className="muted auth-footer-copy">
+            New here? <Link to={ROUTES.register}>Create an account</Link>
+          </p>
+        }
+        isSubmitting={isSubmitting}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        submitLabel="Login"
+        values={values}
+      />
+    </AuthLayout>
   );
 };
 
